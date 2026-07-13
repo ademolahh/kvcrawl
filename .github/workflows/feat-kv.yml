@@ -1,0 +1,46 @@
+name: CI - KV Branch
+
+on:
+    push:
+        branches:
+            - feat/kv
+        paths:
+            - 'kv/**'
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-go@v5
+              with: 
+                    go-version: '1.26.2'
+                    cache: true
+            - run: go test ./...
+    
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-go@v5
+              with:
+                go-version: '1.26.2'
+                cache: true
+            - run: go vet ./...
+
+    build:
+        needs: [test, lint]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-go@v5
+              with:
+                    go-version: '1.26.2'
+                    cache: true
+            - run: |
+                go build -o server ./kv/server
+                go build -o client ./kv/client
+
+
+            
+    

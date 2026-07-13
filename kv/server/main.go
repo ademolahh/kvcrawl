@@ -39,7 +39,5 @@ func main() {
 	}
 	fmt.Println("Server listening on port 1234")
 
-	for {
-		rpc.Accept(lst)
-	}
+	rpc.Accept(lst)
 }

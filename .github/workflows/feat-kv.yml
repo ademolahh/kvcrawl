@@ -4,8 +4,6 @@ on:
     push:
         branches:
             - feat/kv
-        paths:
-            - 'kv/**'
     workflow_dispatch:
 
 jobs:

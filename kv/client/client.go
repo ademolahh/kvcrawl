@@ -2,9 +2,11 @@ package client
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/rpc"
 	"strings"
+	"time"
 
 	"github.com/ademolahh/kvcrawl/kv/shared"
 )
@@ -25,6 +27,8 @@ func (c *Client) set(key, value string) error {
 
 func (c *Client) get(key string) (*shared.GetReply, error) {
 	args := shared.KeyArg{Key: key}
+	time.Sleep(5 * time.Second)
+
 	var reply shared.GetReply
 	if err := c.client.Call("KV.Get", args, &reply); err != nil {
 		return nil, err
@@ -55,7 +59,7 @@ func (c *Client) list() ([]string, error) {
 func (c *Client) Query(input string) (any, error) {
 	msg := strings.Fields(strings.TrimSpace(input))
 	if len(msg) == 0 {
-		return nil, errors.New("invalid command")
+		return nil, errors.New("empty command")
 	}
 
 	switch msg[0] {
@@ -63,18 +67,40 @@ func (c *Client) Query(input string) (any, error) {
 		if len(msg) != 3 {
 			return "", errors.New("usage: set <key> <value>")
 		}
+
 		err := c.set(msg[1], msg[2])
+		fmt.Printf("write sucessful: key=%q\n", msg[1])
 		return "", err
 	case "get":
 		if len(msg) != 2 {
 			return "", errors.New("usage: get <key>")
 		}
-		return c.get(msg[1])
+
+		reply, err := c.get(msg[1])
+		if err != nil {
+			return nil, err
+		}
+
+		if !reply.Ok {
+			return nil, errors.New("key not found")
+		}
+		return reply.Value, nil
 	case "delete":
 		if len(msg) != 2 {
 			return "", errors.New("usage: delete <key>")
 		}
-		return c.delete(msg[1])
+
+		ok, err := c.delete(msg[1])
+		if !ok {
+			return nil, errors.New("does not exists")
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Printf("delete sucessful: key=%q\n", msg[1])
+		return ok, err
 	case "list":
 		return c.list()
 	default:

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"log"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/ademolahh/kvcrawl/kv/client"
 )
@@ -16,20 +17,15 @@ func main() {
 	}
 	defer conn.Close()
 	client := client.NewClient(conn)
-	reader := bufio.NewReader(os.Stdin)
 
-	for {
-		input, err := reader.ReadString('\n')
-		if err != nil {
-			panic(err)
-		}
+	input := strings.Join(os.Args[1:], " ")
 
-		data, err := client.Query(input)
-		if err != nil {
-			continue
-		}
-		if data != "" {
-			fmt.Println("Result is", data)
-		}
+	data, err := client.Query(input)
+	if err != nil {
+		log.Fatalf("error: %v", err)
 	}
+	if data != "" {
+		fmt.Println("Result is", data)
+	}
+
 }

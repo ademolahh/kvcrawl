@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/rpc"
 	"strings"
-	"time"
 
 	"github.com/ademolahh/kvcrawl/kv/shared"
 )
@@ -27,7 +26,6 @@ func (c *Client) set(key, value string) error {
 
 func (c *Client) get(key string) (*shared.GetReply, error) {
 	args := shared.KeyArg{Key: key}
-	time.Sleep(5 * time.Second)
 
 	var reply shared.GetReply
 	if err := c.client.Call("KV.Get", args, &reply); err != nil {

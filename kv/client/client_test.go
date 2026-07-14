@@ -38,13 +38,70 @@ func TestConcurrentClients(t *testing.T) {
 				return
 			}
 
-			if value != res {
-				t.Errorf("expected %q, got %q", value, res)
+			if value != res.Value {
+				assertEq(t, value, res.Value)
 			}
 		})
 	}
 
 	wg.Wait()
+}
+
+func TestListCall(t *testing.T) {
+	addr := newTestServer(t)
+	client, err := newTestClient(t, addr)
+	if err != nil {
+		t.Errorf("failed to connect to server: %v", err)
+		return
+	}
+
+	size := 10
+	for i := range size {
+		key := fmt.Sprintf("hello-%d", i)
+		value := fmt.Sprintf("world-%d", i)
+		if err := client.set(key, value); err != nil {
+			t.Errorf("set failed: %v", err)
+			return
+		}
+	}
+
+	list, err := client.list()
+	if err != nil {
+		t.Errorf("list call failed: %v", err)
+		return
+	}
+
+	if len(list) != size {
+		assertEq(t, size, len(list))
+	}
+
+	if res, err := client.get(list[5]); err == nil && !res.Ok {
+		assertEq(t, true, false)
+	}
+}
+
+func TestDeleteCall(t *testing.T) {
+	addr := newTestServer(t)
+	client, err := newTestClient(t, addr)
+	if err != nil {
+		t.Errorf("failed to connect to server: %v", err)
+		return
+	}
+
+	if err := client.set("hello", "world"); err != nil {
+		t.Errorf("set failed: %v", err)
+		return
+	}
+
+	ok, err := client.delete("hello")
+	if err != nil {
+		t.Errorf("error deleting key: %v", err)
+		return
+	}
+
+	if !ok {
+		assertEq(t, true, ok)
+	}
 }
 
 func newTestClient(t *testing.T, addr net.Addr) (*Client, error) {
@@ -75,4 +132,9 @@ func newTestServer(t *testing.T) net.Addr {
 	go server.Accept(listener)
 
 	return listener.Addr()
+}
+
+func assertEq(t *testing.T, expected, actual any) {
+	t.Helper()
+	t.Errorf("expected %v, actual %v", expected, actual)
 }

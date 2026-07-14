@@ -23,9 +23,34 @@ func (kv *KV) Set(data *shared.SetArgs, result *bool) error {
 	return nil
 }
 
-func (kv *KV) Get(key string, value *string) error {
+func (kv *KV) Get(key shared.KeyArg, reply *shared.GetReply) error {
 	defer kv.mu.RUnlock()
 	kv.mu.RLock()
-	*value = kv.Data[key]
+	reply.Value = kv.Data[key.Key]
+	reply.Ok = true
+	return nil
+}
+
+func (kv *KV) Delete(key shared.KeyArg, reply *bool) error {
+	defer kv.mu.Unlock()
+	kv.mu.Lock()
+
+	if _, exists := kv.Data[key.Key]; exists {
+		delete(kv.Data, key.Key)
+		*reply = true
+	}
+
+	return nil
+
+}
+
+func (kv *KV) List(key shared.EmptyArgs, reply *shared.ListReply) error {
+	defer kv.mu.RUnlock()
+	kv.mu.RLock()
+
+	for k := range kv.Data {
+		reply.Values = append(reply.Values, kv.Data[k])
+	}
+
 	return nil
 }

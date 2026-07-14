@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"errors"
@@ -32,7 +32,7 @@ func (c *Client) get(key string) (string, error) {
 	return value, nil
 }
 
-func (c *Client) query(input string) (string, error) {
+func (c *Client) Query(input string) (string, error) {
 	msg := strings.Fields(strings.TrimSpace(input))
 	if len(msg) == 0 {
 		return "", errors.New("invalid command")

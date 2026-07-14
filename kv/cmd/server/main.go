@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"net"
 	"net/rpc"
+
+	"github.com/ademolahh/kvcrawl/kv/server"
 )
 
 func main() {
-	kv := KV{Data: make(map[string]string)}
+	kv := server.NewKV()
 	rpc.Register(&kv)
 
 	lst, err := net.Listen("tcp", ":1234")

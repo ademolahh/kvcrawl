@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+
+	"github.com/ademolahh/kvcrawl/kv/client"
 )
 
 func main() {
@@ -13,7 +15,7 @@ func main() {
 		panic(err)
 	}
 	defer conn.Close()
-	client := NewClient(conn)
+	client := client.NewClient(conn)
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -22,7 +24,7 @@ func main() {
 			panic(err)
 		}
 
-		data, err := client.query(input)
+		data, err := client.Query(input)
 		if err != nil {
 			continue
 		}

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"sync"
@@ -11,9 +11,13 @@ type KV struct {
 	mu   sync.RWMutex
 }
 
+func NewKV() *KV {
+	return &KV{Data: make(map[string]string)}
+}
+
 func (kv *KV) Set(data *shared.SetArgs, result *bool) error {
 	defer kv.mu.Unlock()
-	defer kv.mu.Lock()
+	kv.mu.Lock()
 	kv.Data[data.Key] = data.Value
 	*result = true
 	return nil

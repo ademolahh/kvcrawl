@@ -41,7 +41,6 @@ func (kv *KV) Delete(key shared.KeyArg, reply *bool) error {
 	}
 
 	return nil
-
 }
 
 func (kv *KV) List(key shared.EmptyArgs, reply *shared.ListReply) error {

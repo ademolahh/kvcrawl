@@ -1,0 +1,8 @@
+name: Crawler CI
+on:
+    push:
+        branches:
+            dev
+
+jobs:
+    

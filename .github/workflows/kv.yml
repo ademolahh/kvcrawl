@@ -1,9 +1,9 @@
-name: CI - KV Branch
+name: CI - Key Value
 
 on:
   push:
     branches:
-      - feat/kv
+      - dev
   workflow_dispatch:
 
 jobs:

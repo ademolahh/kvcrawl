@@ -5,40 +5,55 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/net/html"
 )
 
 type Crawler struct {
-	content  *Seen
-	url      *Seen
-	queue    *Queue
-	capacity int
-	maximum  int
-	tasks    sync.WaitGroup
-	workers  sync.WaitGroup
+	domain  string
+	content *Seen
+	url     *Seen
+	job     chan string
+	worker  int
+	maximum int
+	tasks   sync.WaitGroup
+	workers sync.WaitGroup
 }
 
-func NewCrawler(capacity, maximum, queueSize int) *Crawler {
+func NewCrawler(domain string, maximum, worker, queueSize int) *Crawler {
 	return &Crawler{
-		content:  NewSeen(),
-		url:      NewSeen(),
-		queue:    NewQueue(queueSize),
-		capacity: capacity,
-		maximum:  maximum,
+		domain:  domain,
+		content: NewSeen(),
+		url:     NewSeen(),
+		maximum: maximum,
+		job:     make(chan string, queueSize),
+		worker:  worker,
 	}
 }
 
 func (c *Crawler) download(u string) {
+	defer c.tasks.Done()
+
+	u, err := normalizeURL(u)
+	if err != nil {
+		return
+	}
+
 	if !c.url.tryAdd(u) {
 		return
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), "GET", u, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 	if err != nil {
+
 		return
 	}
 
@@ -48,6 +63,16 @@ func (c *Crawler) download(u string) {
 	if err != nil {
 		return
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+
+	if !strings.Contains(resp.Header.Get("Content-Type"), "text/html") {
+		return
+	}
+
+	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -65,26 +90,46 @@ func (c *Crawler) download(u string) {
 		return
 	}
 
-	links := extract(node)
+	links := c.extract(node)
 
 	for _, link := range links {
-		ch, _ := c.queue.get(link)
+		if c.maximumReached() {
+			continue
+		}
 
-		ch <- link
+		c.tasks.Add(1)
+
+		go func() {
+			c.job <- link
+			fmt.Println(link)
+		}()
+
 	}
-
 }
 
-func (c *Crawler) run() {
-	for _, ch := range c.queue.m {
-		go c.work(ch)
-	}
-}
-
-func (c *Crawler) work(v chan string) {
-	for u := range v {
+func (c *Crawler) wk() {
+	for u := range c.job {
 		c.download(u)
 	}
+}
+
+func (c *Crawler) run(seedUrl string) {
+	c.tasks.Add(1)
+
+	c.workers.Go(func() {
+		c.download(seedUrl)
+	})
+
+	for range c.worker {
+		c.workers.Go(func() {
+			c.wk()
+		})
+	}
+
+	c.tasks.Wait()
+	close(c.job)
+
+	c.workers.Wait()
 }
 
 func contentHash(body string) string {

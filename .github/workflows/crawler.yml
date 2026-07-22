@@ -20,4 +20,4 @@ jobs:
         run: go vet ./web-crawler
 
       - name: Build Web Crawler
-        run: go build ./web-crawler
+        run: go build -o crawler ./web-crawler

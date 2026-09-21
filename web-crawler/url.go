@@ -4,19 +4,18 @@ import (
 	"net/url"
 )
 
-func (c *Crawler) resolveUrl(path string) (string, error) {
-	base, err := url.Parse(c.domain)
+func resolveURL(base, path string) (string, error) {
+	b, err := url.Parse(base)
 	if err != nil {
 		return "", err
 	}
+
 	ref, err := url.Parse(path)
 	if err != nil {
 		return "", err
 	}
 
-	resolved := base.ResolveReference(ref)
-
-	return resolved.String(), nil
+	return b.ResolveReference(ref).String(), nil
 }
 
 func normalizeURL(rawURL string) (string, error) {
@@ -33,8 +32,8 @@ func normalizeURL(rawURL string) (string, error) {
 	return u.String(), nil
 }
 
-func (c *Crawler) process(u string) (string, bool) {
-	resolved, err := c.resolveUrl(u)
+func process(base, path string) (string, bool) {
+	resolved, err := resolveURL(base, path)
 	if err != nil {
 		return "", false
 	}
@@ -49,5 +48,4 @@ func (c *Crawler) process(u string) (string, bool) {
 	}
 
 	return resolved, true
-
 }

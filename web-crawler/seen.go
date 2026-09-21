@@ -25,14 +25,24 @@ func (s *Seen) tryAdd(u string) bool {
 	return true
 }
 
+func (s *Seen) tryAddBounded(u string, limit int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.m[u]; ok {
+		return false
+	}
+
+	if limit > 0 && len(s.m) >= limit {
+		return false
+	}
+
+	s.m[u] = struct{}{}
+	return true
+}
+
 func (s *Seen) Size() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return len(s.m)
-}
-
-func (c *Crawler) maximumReached() bool {
-	c.url.mu.Lock()
-	defer c.url.mu.Unlock()
-	return len(c.url.m) >= c.maximum
 }

@@ -67,10 +67,10 @@ func TestExtraction(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewCrawler("https://example.com", 100, 100, 10)
+			c := NewCrawler(100, 100, 10)
 			node := parseHTML(t, tt.html)
 
-			got := c.extract(node)
+			got := c.extract("https://example.com", node)
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("extract() = %v, want %v", got, tt.want)
@@ -109,7 +109,7 @@ func TestRun(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	c := NewCrawler(srv.URL, 100, 10, 10)
+	c := NewCrawler(100, 10, 10)
 
 	done := make(chan struct{})
 	go func() {

@@ -4,7 +4,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-func (c *Crawler) extract(n *html.Node) []string {
+func (c *Crawler) extract(base string, n *html.Node) []string {
 	var out []string
 
 	var rec (func(node *html.Node))
@@ -17,7 +17,7 @@ func (c *Crawler) extract(n *html.Node) []string {
 					continue
 				}
 
-				link, ok := c.process(attr.Val)
+				link, ok := process(base, attr.Val)
 				if !ok {
 					continue
 				}
@@ -26,8 +26,8 @@ func (c *Crawler) extract(n *html.Node) []string {
 			}
 		}
 
-		for c := node.FirstChild; c != nil; c = c.NextSibling {
-			rec(c)
+		for child := node.FirstChild; child != nil; child = child.NextSibling {
+			rec(child)
 		}
 	}
 

@@ -14,15 +14,29 @@ func TestConcurrentClients(t *testing.T) {
 	addr := newTestServer(t)
 	const workers = 1000
 
+	// A listener's accept backlog is an OS-level limit (128 on macOS, see
+	// kern.ipc.somaxconn), and dialing every worker at once overruns it: the
+	// kernel resets the excess connections before the server ever accepts
+	// them, which looks like a server bug but is not one. Cap how many
+	// connections are open at a time. Every worker still gets its own client,
+	// so this bounds connection concurrency without reducing the load.
+	const maxOpenConns = 50
+	sem := make(chan struct{}, maxOpenConns)
+
 	var wg sync.WaitGroup
 	for i := range workers {
 
 		wg.Go(func() {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
 			client, err := newTestClient(t, addr)
 			if err != nil {
 				t.Errorf("failed to connect to server: %v", err)
 				return
 			}
+			// Runs before the semaphore release above: the slot is only freed
+			// once the connection is actually closed.
 			defer client.client.Close()
 
 			key := fmt.Sprintf("key-%d", i)

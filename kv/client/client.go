@@ -39,10 +39,10 @@ func (c *Client) delete(key string) (bool, error) {
 	args := shared.KeyArg{Key: key}
 	var reply bool
 	if err := c.client.Call("KV.Delete", args, &reply); err != nil {
-		return false, nil
+		return false, err
 	}
 
-	return true, nil
+	return reply, nil
 }
 
 func (c *Client) list() ([]string, error) {
@@ -66,9 +66,12 @@ func (c *Client) Query(input string) (any, error) {
 			return "", errors.New("usage: set <key> <value>")
 		}
 
-		err := c.set(msg[1], msg[2])
+		if err := c.set(msg[1], msg[2]); err != nil {
+			return nil, err
+		}
+
 		fmt.Printf("write sucessful: key=%q\n", msg[1])
-		return "", err
+		return "", nil
 	case "get":
 		if len(msg) != 2 {
 			return "", errors.New("usage: get <key>")
@@ -89,16 +92,16 @@ func (c *Client) Query(input string) (any, error) {
 		}
 
 		ok, err := c.delete(msg[1])
-		if !ok {
-			return nil, errors.New("does not exists")
-		}
-
 		if err != nil {
 			return nil, err
 		}
 
+		if !ok {
+			return nil, errors.New("does not exists")
+		}
+
 		fmt.Printf("delete sucessful: key=%q\n", msg[1])
-		return ok, err
+		return ok, nil
 	case "list":
 		return c.list()
 	default:

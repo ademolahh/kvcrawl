@@ -26,8 +26,7 @@ func (kv *KV) Set(data *shared.SetArgs, result *bool) error {
 func (kv *KV) Get(key shared.KeyArg, reply *shared.GetReply) error {
 	defer kv.mu.RUnlock()
 	kv.mu.RLock()
-	reply.Value = kv.Data[key.Key]
-	reply.Ok = true
+	reply.Value, reply.Ok = kv.Data[key.Key]
 	return nil
 }
 

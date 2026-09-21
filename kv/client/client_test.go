@@ -89,8 +89,46 @@ func TestListCall(t *testing.T) {
 		assertEq(t, size, len(list))
 	}
 
-	if res, err := client.get(list[5]); err == nil && !res.Ok {
-		assertEq(t, true, false)
+	if res, err := client.get("hello-5"); err != nil || !res.Ok {
+		assertEq(t, true, res.Ok)
+	}
+}
+
+func TestGetMissingKey(t *testing.T) {
+	addr := newTestServer(t)
+	client, err := newTestClient(t, addr)
+	if err != nil {
+		t.Errorf("failed to connect to server: %v", err)
+		return
+	}
+
+	res, err := client.get("missing")
+	if err != nil {
+		t.Errorf("get failed: %v", err)
+		return
+	}
+
+	if res.Ok {
+		assertEq(t, false, res.Ok)
+	}
+}
+
+func TestDeleteMissingKey(t *testing.T) {
+	addr := newTestServer(t)
+	client, err := newTestClient(t, addr)
+	if err != nil {
+		t.Errorf("failed to connect to server: %v", err)
+		return
+	}
+
+	ok, err := client.delete("missing")
+	if err != nil {
+		t.Errorf("error deleting key: %v", err)
+		return
+	}
+
+	if ok {
+		assertEq(t, false, ok)
 	}
 }
 
